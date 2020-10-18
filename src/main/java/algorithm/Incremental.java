@@ -14,19 +14,17 @@ public class Incremental {
     private Hypergraph hypergraph;
     private HashMap<Integer, Integer> coreVMap;
     private HashMap<Integer, Integer> coreEMap;
-    private HashMap<Integer,ArrayList<Integer>> coreIndex;
     private final Integer e0Id;  //the inserted edge
-
-    public Incremental(Hypergraph hypergraph, HashMap<Integer, Integer> coreVMap, HashMap<Integer, Integer> coreEMap, HashMap<Integer, ArrayList<Integer>> coreIndex) {
-        this.hypergraph = hypergraph;
-        this.coreVMap = coreVMap;
-        this.coreEMap = coreEMap;
-        this.coreIndex = coreIndex;
-    }
 
     /**
      * constructor
      */
+    public Incremental(Hypergraph hypergraph, HashMap<Integer, Integer> coreVMap, HashMap<Integer, Integer> coreEMap, Integer e0Id) {
+        this.hypergraph = hypergraph;
+        this.coreVMap = coreVMap;
+        this.coreEMap = coreEMap;
+        this.e0Id = e0Id;
+    }
 
 
     public Result run() {

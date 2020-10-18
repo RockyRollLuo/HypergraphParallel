@@ -3,6 +3,7 @@ import algorithm.Incremental;
 import model.Hypergraph;
 import model.Result;
 import org.apache.log4j.Logger;
+import util.ComputeUtils;
 import util.FileIOUtils;
 import util.SetOpt;
 import util.SetOpt.Option;
@@ -22,7 +23,7 @@ public class MainAllAlgorithm {
     public static int printResult = 0;
 
     @Option(abbr = 'm', usage = "the method of choosing dynamic edge, 0:degree choose, 1:cardinality choose, 2:core choose")
-    public static int method =2;
+    public static int method = 2;
 
     @Option(abbr = 'd', usage = "degree position, 0:low,1:avg,2:high")
     public static int degreePosition = 1;
@@ -30,11 +31,9 @@ public class MainAllAlgorithm {
     @Option(abbr = 'c', usage = "cardinality of dynamic edge")
     public static int cardinality = 3;
 
-    @Option(abbr = 'e', usage = "corenumber of dynamic edge")
+    @Option(abbr = 'e', usage = "number of dynamic edge")
     public static int coreE = 20;
 
-    @Option(abbr = 'n', usage = "whether to constructe nodeToEdgesMap, false:no, true:yes")
-    public static boolean constructStructure = false;
 
     public static void main(String[] args) throws IOException {
         /*
@@ -47,9 +46,9 @@ public class MainAllAlgorithm {
         System.out.println("method of choosing dynamic edge :" + method);
         if (method == 0) {
             System.out.println("degreeposition of e0 :" + ToolUtils.getDegreePosition(degreePosition));
-        } else if(method == 1){
+        } else if (method == 1) {
             System.out.println("cardinality of e0 :" + cardinality);
-        }else if(method==2){
+        } else if (method == 2) {
             System.out.println("corenumber of e0 :" + coreE);
         }
 
@@ -57,32 +56,29 @@ public class MainAllAlgorithm {
         graph information
          */
         String datasetName = args[0];
-        Hypergraph hypergraph = FileIOUtils.loadGraph(datasetName, ToolUtils.getDelim(delimType),constructStructure);
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> nodeToEdgesMap = new HashMap<>();
-        if (constructStructure) {
-            nodeToEdgesMap = hypergraph.getNodeToEdgesMap();
-        } else {
-            nodeToEdgesMap = FileIOUtils.loadNodeToEdgesMap(datasetName);
-            hypergraph.setNodeToEdgesMap(nodeToEdgesMap);
-        }
+        Hypergraph hypergraph = FileIOUtils.loadGraph(datasetName, ToolUtils.getDelim(delimType), false);
+        HashMap<Integer, ArrayList<Integer>> nodeToEdgesMap = FileIOUtils.loadNodeToEdgesMap(datasetName);
+
+        hypergraph.setNodeToEdgesMap(nodeToEdgesMap);
+
         ArrayList<Integer> nodeList = hypergraph.getNodeList();
-        ArrayList<ArrayList<Integer>> edgeList = hypergraph.getEdgeList();
+        HashMap<Integer,ArrayList<Integer>> edgeMap = hypergraph.getEdgeMap();
         System.out.println("dataset:" + datasetName);
         System.out.println("node size:" + nodeList.size());
-        System.out.println("edge size:" + edgeList.size());
+        System.out.println("edge size:" + edgeMap.size());
 
         /*
         read decomposition full core file and compute coreEMap
          */
         String coreFile = "Decomposition_" + datasetName + "_full";
         HashMap<Integer, Integer> coreVMap = FileIOUtils.loadCoreFile(coreFile);
-        HashMap<ArrayList<Integer>, Integer> coreEMap = hypergraph.computeCoreEMapByCoreVMap(edgeList, coreVMap);
+        HashMap<Integer, Integer> coreEMap = ComputeUtils.computeCoreEMapByCoreVMap(edgeMap, coreVMap);
 
          /*
         choose dynamic edge
          */
         ArrayList<Integer> e0 = new ArrayList<>();
-        if(method==0){
+        if (method == 0) {
             //1.degree distribution choose
             HashMap<Integer, Integer> degreeMap = hypergraph.getDegreeMap();
             degreeMap = (HashMap<Integer, Integer>) ToolUtils.sortMapByValue(degreeMap, 0); //sorted nodes by degree descending

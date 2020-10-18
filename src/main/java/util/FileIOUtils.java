@@ -8,6 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public class FileIOUtils {
 
@@ -31,14 +32,15 @@ public class FileIOUtils {
         }
         String path = "datasets" + pathSeparator + datasetName;
 
-        LOGGER.info("Start loading graph: " + path);
-
-        ArrayList<ArrayList<Integer>> edgeList = new ArrayList<>();
+        HashMap<Integer, ArrayList<Integer>> edgeMap = new HashMap<>();
         ArrayList<Integer> tempNodeList = new ArrayList<>();
 
         //read edges
         final BufferedReader br = new BufferedReader(new FileReader(path));
+
+        int edgeIndex=0;
         while (true) {
+
             final String line = br.readLine();
             if (line == null) {
                 break;
@@ -48,9 +50,6 @@ public class FileIOUtils {
             }
 
             String[] tokens = line.split(delim);
-//            if (tokens.length == 1) {
-//                continue;
-//            }
             ArrayList<Integer> newEdge = new ArrayList<>();
             for (String token : tokens) {
                 int node = Integer.parseInt(token);
@@ -58,17 +57,60 @@ public class FileIOUtils {
                 tempNodeList.add(node);
             }
 
-            edgeList.add(newEdge);
+            edgeMap.put(edgeIndex,newEdge);
+            edgeIndex++;
         }
 
-
+        //remove duplicate nodes
         HashSet<Integer> nodeSet = new HashSet<>(tempNodeList);
         ArrayList<Integer> nodeList = new ArrayList<>(nodeSet);
 
         long endTime = System.nanoTime();
         LOGGER.info("TakenTime:" + (double) (endTime - startTime) / 1.0E9D);
 
-        return new Hypergraph(nodeList, edgeList,constructStructure);
+        return new Hypergraph(nodeList, edgeMap, constructStructure);
+    }
+
+
+    /**
+     * write the core number of nodes
+     *
+     * @param result coreMap
+     * @throws IOException IO
+     */
+    public static void writeCoreNumber(Result result, int printResult) throws IOException {
+        long startTime = System.nanoTime();
+
+        HashMap<Integer, Integer> output = result.getCoreVMap();
+        double takenTime = result.getTakenTime();
+        String algorithmName = result.getAlgorithmName();
+        String datasetName = result.getDatasetName();
+        String type = result.getType();
+
+        //Operate System
+        String pathSeparator = "\\";
+        String os = System.getProperty("os.name");
+        if (!os.toLowerCase().startsWith("win")) {
+            pathSeparator = "/";
+        }
+        String fileName = "corenumber" + pathSeparator + algorithmName + "_" + datasetName + "_" + type;
+
+        BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
+
+        bw.write("# takenTime:" + takenTime + "ms");
+        bw.newLine();
+
+        //whether print the core nubmer
+        if (printResult == 1) {
+            for (Integer key : output.keySet()) {
+                bw.write(key.toString() + " " + output.get(key));
+                bw.newLine();
+            }
+        }
+        bw.close();
+
+        long endTime = System.nanoTime();
+        LOGGER.info((double) (endTime - startTime) / 1.0E9D);
     }
 
     /**
@@ -88,8 +130,6 @@ public class FileIOUtils {
         }
         String path = "corenumber" + pathSeparator + coreFile;
 
-        LOGGER.info("Start loading core_number_file: " + path);
-
         HashMap<Integer, Integer> coreVMap = new HashMap<>();
 
         //read edges
@@ -99,11 +139,11 @@ public class FileIOUtils {
             if (line == null) {
                 break;
             }
-            if (line.startsWith("#") || line.startsWith("%") || line.startsWith("//")) {
+            if (line.startsWith("#")) {
                 continue;
             }
 
-            String[] tokens = line.split("\t");
+            String[] tokens = line.split(" ");
             Integer node = Integer.parseInt(tokens[0]);
             int coreness = Integer.parseInt(tokens[1]);
             coreVMap.put(node, coreness);
@@ -116,55 +156,14 @@ public class FileIOUtils {
     }
 
     /**
-     * write the core number of nodes
+     * write the nodeToEdgesMap to file
      *
-     * @param result coreMap
-     * @throws IOException
-     */
-    public static void writeCoreNumber(Result result, int printResult) throws IOException {
-        long startTime = System.nanoTime();
-
-        HashMap<Integer, Integer> output = result.getOutput();
-        double takenTime = result.getTakenTime();
-        String algorithmName = result.getAlgorithmName();
-        String datasetName = result.getDatasetName();
-        String type = result.getType();
-
-        //Operate System
-        String pathSeparator = "\\";
-        String os = System.getProperty("os.name");
-        if (!os.toLowerCase().startsWith("win")) {
-            pathSeparator = "/";
-        }
-        String fileName = "corenumber" + pathSeparator + algorithmName + "_" + datasetName + "_" + type;
-
-        BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
-
-        bw.write("# takenTime:" + takenTime + "us");
-        bw.newLine();
-
-        //whether print the core nubmer
-        if (printResult == 1) {
-            for (Integer key : output.keySet()) {
-                bw.write(key.toString() + "\t" + output.get(key));
-                bw.newLine();
-            }
-        }
-        bw.close();
-
-        long endTime = System.nanoTime();
-        LOGGER.info((double) (endTime - startTime) / 1.0E9D);
-    }
-
-    /**
-     *  write the nodeToEdgesMap to file
      * @param nodeToEdgesMap data structure
-     * @param datasetName dataset name
+     * @param datasetName    dataset name
      * @throws IOException io
      */
-    public static void writeNodeToEdgesMap(HashMap<Integer, ArrayList<ArrayList<Integer>>> nodeToEdgesMap, String datasetName) throws IOException {
+    public static void writeNodeToEdgesMap(HashMap<Integer, ArrayList<Integer>> nodeToEdgesMap, String datasetName) throws IOException {
         long startTime = System.nanoTime();
-        LOGGER.info("Start writing nodeToEdgesMap... ");
 
         //Operate System
         String pathSeparator = "\\";
@@ -172,25 +171,18 @@ public class FileIOUtils {
         if (!os.toLowerCase().startsWith("win")) {
             pathSeparator = "/";
         }
-        String fileName = "datasets/nodeToEdgesMap/" + datasetName;
+        String fileName = "datasets/nodeToEdgesMap/" + datasetName+".txt";
 
         BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
 
-        bw.write("# dataset: " + datasetName );
-        bw.newLine();
+        //write
+        for (Map.Entry<Integer, ArrayList<Integer>> entry : nodeToEdgesMap.entrySet()) {
 
-        //print
-        for (Integer node : nodeToEdgesMap.keySet()) {
-            ArrayList<ArrayList<Integer>> edges = nodeToEdgesMap.get(node);
-
-
-            bw.write(node.toString() + "\t" + edges.size());
+            bw.write(entry.getKey().toString());
             bw.newLine();
 
-            for (ArrayList<Integer> e : edges) {
-                bw.write(e.toString().replace("[","").replace("]","").replace(" ",""));
-                bw.newLine();
-            }
+            bw.write(entry.getValue().toString().replace("[", "").replace("]", "").replace(" ", ""));
+            bw.newLine();
         }
         bw.close();
 
@@ -199,49 +191,40 @@ public class FileIOUtils {
     }
 
     /**
-     *  read the file of nodeToEdgesMap
+     * read the file of nodeToEdgesMap
+     *
      * @param datasetName dataset name
      * @return nodeToEdgesMap
      * @throws IOException io
      */
-    public static HashMap<Integer, ArrayList<ArrayList<Integer>>> loadNodeToEdgesMap(String datasetName) throws IOException {
+    public static HashMap<Integer, ArrayList<Integer>> loadNodeToEdgesMap(String datasetName) throws IOException {
         long startTime = System.nanoTime();
 
         String path = "datasets/nodeToEdgesMap/" + datasetName;
 
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> nodeToEdgesMap = new HashMap<>();
+        HashMap<Integer, ArrayList<Integer>> nodeToEdgesMap = new HashMap<>();
 
         //read
         final BufferedReader br = new BufferedReader(new FileReader(path));
         while (true) {
-            final String line = br.readLine();
-            if (line == null) {
+            final String nodeIdLine = br.readLine();
+            if (nodeIdLine == null) {
                 break;
             }
-            if (line.startsWith("#") || line.startsWith("%") || line.startsWith("//")) {
-                continue;
-            }
 
-            //node and edge size
-            String[] nodeAndSize = line.split("\t");
-            Integer node = Integer.parseInt(nodeAndSize[0]);
-            int edgeSize = Integer.parseInt(nodeAndSize[1]);
-
+            //node
+            Integer node = Integer.parseInt(nodeIdLine);
 
             //read edges
-            ArrayList<ArrayList<Integer>> edges = new ArrayList<>();
-            for (int i = 0; i < edgeSize; i++) {
-                String edgeLine = br.readLine();
+            String edgesIdLine = br.readLine();
+            String[] tokens = edgesIdLine.split(",");
 
-                ArrayList<Integer> e = new ArrayList<>();
-                String[] tokens=edgeLine.split(",");
-                for (String token : tokens) {
-                    int nodeInEdge = Integer.parseInt(token);
-                    e.add(nodeInEdge);
-                }
-                edges.add(e);
+            ArrayList<Integer> edgesIdList = new ArrayList<>();
+            for (String token : tokens) {
+                int nodeInEdge = Integer.parseInt(token);
+                edgesIdList.add(nodeInEdge);
             }
-            nodeToEdgesMap.put(node, edges);
+            nodeToEdgesMap.put(node, edgesIdList);
         }
 
         long endTime = System.nanoTime();

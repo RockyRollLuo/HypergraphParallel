@@ -25,7 +25,7 @@ public class MainSingleAlgorithm {
     @Option(abbr = 'd', usage = "degree position, 0:low,1:avg,2:high")
     public static int degreePosition = 1;
 
-    @Option(abbr = 'p', usage = "whether print the core number in result")
+    @Option(abbr = 'p', usage = "whether print the core number in result, 0:no,1:yes")
     public static int printResult = 1;
 
     @Option(abbr = 'c', usage = "whether to constructe nodeToEdgesMap, false:no, true:yes")
@@ -48,17 +48,16 @@ public class MainSingleAlgorithm {
         String datasetName = args[0];
         Hypergraph hypergraph = FileIOUtils.loadGraph(datasetName, ToolUtils.getDelim(delimType),constructStructure);
         ArrayList<Integer> nodeList = hypergraph.getNodeList();
-        ArrayList<ArrayList<Integer>> edgeList = hypergraph.getEdgeList();
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> nodeToEdgesMap = hypergraph.getNodeToEdgesMap();
+        HashMap<Integer,ArrayList<Integer>> edgeMap = hypergraph.getEdgeMap();
+        HashMap<Integer, ArrayList<Integer>> nodeToEdgesMap = hypergraph.getNodeToEdgesMap();
         System.out.println("dataset:" + datasetName);
         System.out.println("node size:" + nodeList.size());
-        System.out.println("edge size:" + edgeList.size());
+        System.out.println("edge size:" + edgeMap.size());
 
 
         /*
         single algorithm
          */
-
         HashMap<Integer, Integer> degreeMap = hypergraph.getDegreeMap();
 
         /*
@@ -72,18 +71,20 @@ public class MainSingleAlgorithm {
             FileIOUtils.writeCoreNumber(result_decomposition,printResult);
 
         }else if (algorithmType == 1 || algorithmType == 2) {
+
             degreeMap = (HashMap<Integer, Integer>) ToolUtils.sortMapByValue(degreeMap, 0); //sorted nodes by degree descending
             int index = ToolUtils.getNodeIndexRand(degreePosition,nodeList.size());
             Integer node = (new ArrayList<Integer>(degreeMap.keySet())).get(index);
-            ArrayList<Integer> e0 = ToolUtils.getRandomElement(nodeToEdgesMap.get(node));
-            LOGGER.info("dynamic edge e0:"+e0.toString());
+            Integer e0Id = ToolUtils.getRandomElement(nodeToEdgesMap.get(node));
+            LOGGER.info("dynamic edge e0:"+edgeMap.get(e0Id).toString());
 
             /*
             1.incremental
              */
             if (algorithmType == 1) {
                 //1.construct graph
-                hypergraph.deleteEdge(e0);
+                hypergraph.deleteEdge(e0Id);
+
                 //2.decomposition rest
                 Decomposition decomposition_rest = new Decomposition(hypergraph);
                 decomposition_rest.run();

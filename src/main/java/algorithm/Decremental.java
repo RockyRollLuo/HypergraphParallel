@@ -16,20 +16,18 @@ public class Decremental {
     private Hypergraph hypergraph;
     private HashMap<Integer, Integer> coreVMap;
     private HashMap<Integer, Integer> coreEMap;
-    private HashMap<Integer,ArrayList<Integer>> coreIndex;
     private final Integer e0Id;  //the deleted edge ID
-
-    public Decremental(Hypergraph hypergraph, HashMap<Integer, Integer> coreVMap, HashMap<Integer, Integer> coreEMap, HashMap<Integer, ArrayList<Integer>> coreIndex, Integer e0Id) {
-        this.hypergraph = hypergraph;
-        this.coreVMap = coreVMap;
-        this.coreEMap = coreEMap;
-        this.coreIndex = coreIndex;
-        this.e0Id = e0Id;
-    }
 
     /**
      * constructor
      */
+    public Decremental(Hypergraph hypergraph, HashMap<Integer, Integer> coreVMap, HashMap<Integer, Integer> coreEMap, Integer e0Id) {
+        this.hypergraph = hypergraph;
+        this.coreVMap = coreVMap;
+        this.coreEMap = coreEMap;
+        this.e0Id = e0Id;
+    }
+
 
 
     public Result run() {

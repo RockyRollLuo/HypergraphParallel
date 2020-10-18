@@ -7,7 +7,6 @@ import util.ComputeUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class Decomposition {
     private static final Logger LOGGER = Logger.getLogger(Decomposition.class);
@@ -15,7 +14,6 @@ public class Decomposition {
     private Hypergraph hypergraph;
     private HashMap<Integer, Integer> coreVMap;
     private HashMap<Integer, Integer> coreEMap;
-    private HashMap<Integer,ArrayList<Integer>> coreIndex;
 
     public Decomposition(Hypergraph hypergraph) {
         this.hypergraph = hypergraph;
@@ -102,27 +100,6 @@ public class Decomposition {
         double takenTime = (endTime - startTime) / 1.0E9D;
         LOGGER.info(takenTime);
 
-        /*
-        construct coreIndex
-         */
-        HashMap<Integer, ArrayList<Integer>> temCoreIndex = new HashMap<>();
-        for (Map.Entry<Integer, Integer> entryV : tempCoreVMap.entrySet()) {
-            Integer node = entryV.getKey();
-            Integer core_node = entryV.getValue();
-
-            for (Map.Entry<Integer, Integer> entryE : tempCoreEMap.entrySet()) {
-                Integer eId = entryE.getKey();
-                Integer core_e = entryE.getValue();
-
-                if (core_node == core_e) {
-                    ArrayList<Integer> sameCoreEdgeList=temCoreIndex.get(node)==null?new ArrayList<>():temCoreIndex.get(node);
-                    sameCoreEdgeList.add(eId);
-                    temCoreIndex.put(node, sameCoreEdgeList);
-                }
-            }
-        }
-        this.coreIndex = temCoreIndex;
-
         return new Result(coreVMap, coreEMap, takenTime, "Decomposition");
     }
 
@@ -153,14 +130,6 @@ public class Decomposition {
 
     public void setCoreVMap(HashMap<Integer, Integer> coreVMap) {
         this.coreVMap = coreVMap;
-    }
-
-    public HashMap<Integer, ArrayList<Integer>> getCoreIndex() {
-        return coreIndex;
-    }
-
-    public void setCoreIndex(HashMap<Integer, ArrayList<Integer>> coreIndex) {
-        this.coreIndex = coreIndex;
     }
 
 }
