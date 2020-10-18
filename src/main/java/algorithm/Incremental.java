@@ -12,19 +12,22 @@ public class Incremental {
     private static final Logger LOGGER = Logger.getLogger(Incremental.class);
 
     private Hypergraph hypergraph;
-    private HashMap<ArrayList<Integer>, Integer> coreEMap;
     private HashMap<Integer, Integer> coreVMap;
-    private final ArrayList<Integer> e0;  //the inserted edge
+    private HashMap<Integer, Integer> coreEMap;
+    private HashMap<Integer,ArrayList<Integer>> coreIndex;
+    private final Integer e0Id;  //the inserted edge
+
+    public Incremental(Hypergraph hypergraph, HashMap<Integer, Integer> coreVMap, HashMap<Integer, Integer> coreEMap, HashMap<Integer, ArrayList<Integer>> coreIndex) {
+        this.hypergraph = hypergraph;
+        this.coreVMap = coreVMap;
+        this.coreEMap = coreEMap;
+        this.coreIndex = coreIndex;
+    }
 
     /**
      * constructor
      */
-    public Incremental(Hypergraph hypergraph, HashMap<ArrayList<Integer>, Integer> coreEMap, HashMap<Integer, Integer> coreVMap, ArrayList<Integer> e0) {
-        this.hypergraph = hypergraph;
-        this.coreEMap = coreEMap;
-        this.coreVMap = coreVMap;
-        this.e0 = e0;
-    }
+
 
     public Result run() {
         long startTime = System.nanoTime();
@@ -33,32 +36,31 @@ public class Incremental {
         private properties of hypergraph
          */
         ArrayList<Integer> nodeList = hypergraph.getNodeList();
-        ArrayList<ArrayList<Integer>> edgeList = hypergraph.getEdgeList();
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> nodeToEdgesMap = hypergraph.getNodeToEdgesMap();
+        HashMap<Integer, ArrayList<Integer>> edgeMap = hypergraph.getEdgeMap();
+        HashMap<Integer, ArrayList<Integer>> nodeToEdgesMap = hypergraph.getNodeToEdgesMap();
 
         /*
         temp data
          */
         HashMap<Integer, Integer> tempCoreVMap = new HashMap<>(coreVMap);
-        HashMap<ArrayList<Integer>, Integer> tempCoreEMap = new HashMap<>(coreEMap);
+        HashMap<Integer, Integer> tempCoreEMap = new HashMap<>(coreEMap);
 
 
         /*
          compute pre core and update graph
          1.update nodeList
-         2.update edgeList
-         3.update nodeToEdgesMap
+         2.update nodeToEdgesMap
          */
         boolean newNodeFlag = false;
         int pre_core_e0 = Integer.MAX_VALUE;
-        for (Integer v : e0) {
+        for (Integer v : edgeMap.get(e0Id)) {
             if (nodeList.contains(v)) {
                 int core_v = tempCoreVMap.get(v);
                 pre_core_e0 = Math.min(core_v, pre_core_e0);
 
-                //3.update nodeToEdgesMap
-                ArrayList<ArrayList<Integer>> edgesContainV = nodeToEdgesMap.get(v);
-                edgesContainV.add(e0);
+                //2.update nodeToEdgesMap
+                ArrayList<Integer> edgesContainV = nodeToEdgesMap.get(v);
+                edgesContainV.add(e0Id);
                 nodeToEdgesMap.put(v, edgesContainV);
 
             } else {
@@ -67,18 +69,17 @@ public class Incremental {
 
                 nodeList.add(v); //1.update nodeList
 
-                //3.update nodeToEdgesMap
-                ArrayList<ArrayList<Integer>> edgesContainV = new ArrayList<>();
-                edgesContainV.add(e0);
+                //2.update nodeToEdgesMap
+                ArrayList<Integer> edgesContainV = new ArrayList<>();
+                edgesContainV.add(e0Id);
                 nodeToEdgesMap.put(v, edgesContainV);
             }
         }
         if (newNodeFlag) {
-            tempCoreEMap.put(e0, 1); // the core nubmer of new edge is 1
+            tempCoreEMap.put(e0Id, 1); // the core nubmer of new edge is 1
         } else {
-            tempCoreEMap.put(e0, pre_core_e0);
+            tempCoreEMap.put(e0Id, pre_core_e0);
         }
-        edgeList.add(e0); //2.update edgeList
 
 
         /*
@@ -99,7 +100,7 @@ public class Incremental {
             visitedNode.put(v, false);
         }
         Stack<Integer> stack = new Stack<>();
-        for (Integer v : e0) {
+        for (Integer v : edgeMap.get(e0Id)) {
             if (tempCoreVMap.get(v) == core_root) {
                 stack.push(v);
                 visitedNode.put(v, true);//NEED!,the initialized value not only one
@@ -108,7 +109,7 @@ public class Incremental {
         while (!stack.isEmpty()) {
             Integer v_stack = stack.pop();
 
-            for (ArrayList<Integer> e_contain_v : nodeToEdgesMap.get(v_stack)) {
+            for (Integer e_contain_v : nodeToEdgesMap.get(v_stack)) {
                 //compute support
                 int core_e_contain_v = tempCoreEMap.get(e_contain_v);
                 if (core_e_contain_v >= core_root) {
@@ -117,7 +118,7 @@ public class Incremental {
                 }
                 //traversal
                 if (core_e_contain_v == core_root) {
-                    for (Integer u : e_contain_v) {
+                    for (Integer u : edgeMap.get(e_contain_v)) {
                         if (tempCoreVMap.get(u) == core_root && !visitedNode.get(u)) {
                             stack.push(u);
                             visitedNode.put(u, true);
@@ -149,8 +150,8 @@ public class Incremental {
         while (!evictStack.isEmpty()) {
             Integer v = evictStack.pop();
 
-            for (ArrayList<Integer> e_contain_v : nodeToEdgesMap.get(v)) {
-                for (Integer u : e_contain_v) {
+            for (Integer e_contain_v : nodeToEdgesMap.get(v)) {
+                for (Integer u : edgeMap.get(e_contain_v)) {
                     if (supportMap.containsKey(u) && !evictNodes.contains(u)) {
                         int support_u = supportMap.get(u) - 1;
                         supportMap.put(u, support_u);
@@ -166,17 +167,17 @@ public class Incremental {
         /*
         3.update core number of the nodes and edges in (k+1)-core
          */
-        int countEdge=0;
-        int countNode=0;
+        int countEdge = 0;
+        int countNode = 0;
         for (Integer v : supportMap.keySet()) {
             if (!evictNodes.contains(v)) { //nodes not in evictNodes are increase core
                 countNode++;
                 tempCoreVMap.put(v, core_root + 1); //the core of each node in supportMap  is core_root
-                for (ArrayList<Integer> e_contain_v : nodeToEdgesMap.get(v)) {
+                for (Integer e_contain_v : nodeToEdgesMap.get(v)) {
                     if (tempCoreEMap.get(e_contain_v) == core_root) { //only the core_root edges may be increase
                         countEdge++;
                         int core_min = Integer.MAX_VALUE;
-                        for (Integer u : e_contain_v) {
+                        for (Integer u : edgeMap.get(e_contain_v)) {
                             core_min = Math.min(core_min, tempCoreVMap.get(u)); //update the core of edge
                         }
                         tempCoreEMap.put(e_contain_v, core_min);
@@ -191,11 +192,11 @@ public class Incremental {
         long endTime = System.nanoTime();
         double takenTime = (endTime - startTime) / 1.0E9D;
         LOGGER.error(takenTime);
-        System.out.println("countEdge:"+countEdge);
-        System.out.println("countNode:"+countNode);
-        System.out.println("countSearchNode:"+supportMap.size());
+        System.out.println("countSearchNode:" + supportMap.size());
+        System.out.println("countDynamicNode:" + countNode);
+        System.out.println("countDynamicEdge:" + countEdge);
 
-        return new Result(coreVMap, takenTime, "Incremental", "full");
+        return new Result(coreVMap, coreEMap, takenTime, "Incremental", "full");
     }
 
     /**
@@ -209,19 +210,19 @@ public class Incremental {
         this.hypergraph = hypergraph;
     }
 
-    public HashMap<ArrayList<Integer>, Integer> getCoreEMap() {
-        return coreEMap;
-    }
-
-    public void setCoreEMap(HashMap<ArrayList<Integer>, Integer> coreEMap) {
-        this.coreEMap = coreEMap;
-    }
-
     public HashMap<Integer, Integer> getCoreVMap() {
         return coreVMap;
     }
 
     public void setCoreVMap(HashMap<Integer, Integer> coreVMap) {
         this.coreVMap = coreVMap;
+    }
+
+    public HashMap<Integer, Integer> getCoreEMap() {
+        return coreEMap;
+    }
+
+    public void setCoreEMap(HashMap<Integer, Integer> coreEMap) {
+        this.coreEMap = coreEMap;
     }
 }

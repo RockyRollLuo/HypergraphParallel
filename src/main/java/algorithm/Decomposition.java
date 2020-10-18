@@ -13,8 +13,8 @@ public class Decomposition {
     private static final Logger LOGGER = Logger.getLogger(Decomposition.class);
 
     private Hypergraph hypergraph;
-    private HashMap<Integer, Integer> coreEMap;
     private HashMap<Integer, Integer> coreVMap;
+    private HashMap<Integer, Integer> coreEMap;
     private HashMap<Integer,ArrayList<Integer>> coreIndex;
 
     public Decomposition(Hypergraph hypergraph) {
@@ -37,8 +37,8 @@ public class Decomposition {
         HashMap<Integer, ArrayList<Integer>> nodeToEdgesMap = hypergraph.getNodeToEdgesMap();
 
         //temp data
-        HashMap<Integer, Integer> tempCoreEMap = new HashMap<>();
         HashMap<Integer, Integer> tempCoreVMap = new HashMap<>();
+        HashMap<Integer, Integer> tempCoreEMap = new HashMap<>();
 
         ArrayList<Integer> tempNodeList = new ArrayList<>(nodeList);
         HashMap<Integer, ArrayList<Integer>> tempEdgeMap = new HashMap<>(edgeMap);
@@ -102,13 +102,30 @@ public class Decomposition {
         double takenTime = (endTime - startTime) / 1.0E9D;
         LOGGER.info(takenTime);
 
-        //construct coreIndex
-        for(Integer node:tempCoreVMap)
+        /*
+        construct coreIndex
+         */
+        HashMap<Integer, ArrayList<Integer>> temCoreIndex = new HashMap<>();
+        for (Map.Entry<Integer, Integer> entryV : tempCoreVMap.entrySet()) {
+            Integer node = entryV.getKey();
+            Integer core_node = entryV.getValue();
 
+            for (Map.Entry<Integer, Integer> entryE : tempCoreEMap.entrySet()) {
+                Integer eId = entryE.getKey();
+                Integer core_e = entryE.getValue();
 
+                if (core_node == core_e) {
+                    ArrayList<Integer> sameCoreEdgeList=temCoreIndex.get(node)==null?new ArrayList<>():temCoreIndex.get(node);
+                    sameCoreEdgeList.add(eId);
+                    temCoreIndex.put(node, sameCoreEdgeList);
+                }
+            }
+        }
+        this.coreIndex = temCoreIndex;
 
         return new Result(coreVMap, coreEMap, takenTime, "Decomposition");
     }
+
 
     /**
      * getter and setter
@@ -137,4 +154,13 @@ public class Decomposition {
     public void setCoreVMap(HashMap<Integer, Integer> coreVMap) {
         this.coreVMap = coreVMap;
     }
+
+    public HashMap<Integer, ArrayList<Integer>> getCoreIndex() {
+        return coreIndex;
+    }
+
+    public void setCoreIndex(HashMap<Integer, ArrayList<Integer>> coreIndex) {
+        this.coreIndex = coreIndex;
+    }
+
 }

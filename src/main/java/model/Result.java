@@ -9,8 +9,7 @@ public class Result {
     private String algorithmName;
     private String datasetName;
     private String type;
-
-
+    
     /**
      * constructor
      */

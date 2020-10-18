@@ -7,25 +7,30 @@ import util.ToolUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 
 public class Decremental {
     private static final Logger LOGGER = Logger.getLogger(Decremental.class);
 
     private Hypergraph hypergraph;
-    private HashMap<Integer, Integer> coreEMap;
     private HashMap<Integer, Integer> coreVMap;
-    private final Integer e0;  //the deleted edge
+    private HashMap<Integer, Integer> coreEMap;
+    private HashMap<Integer,ArrayList<Integer>> coreIndex;
+    private final Integer e0Id;  //the deleted edge ID
+
+    public Decremental(Hypergraph hypergraph, HashMap<Integer, Integer> coreVMap, HashMap<Integer, Integer> coreEMap, HashMap<Integer, ArrayList<Integer>> coreIndex, Integer e0Id) {
+        this.hypergraph = hypergraph;
+        this.coreVMap = coreVMap;
+        this.coreEMap = coreEMap;
+        this.coreIndex = coreIndex;
+        this.e0Id = e0Id;
+    }
 
     /**
      * constructor
      */
-    public Decremental(Hypergraph hypergraph, HashMap<Integer, Integer> coreEMap, HashMap<Integer, Integer> coreVMap, Integer e0) {
-        this.hypergraph = hypergraph;
-        this.coreEMap = coreEMap;
-        this.coreVMap = coreVMap;
-        this.e0 = eId;
-    }
+
 
     public Result run() {
         long startTime = System.nanoTime();
@@ -34,7 +39,7 @@ public class Decremental {
         private properties of hypergraph
          */
         ArrayList<Integer> nodeList = hypergraph.getNodeList();
-        HashMap<Integer,ArrayList<Integer>> edgeMap = hypergraph.getEdgeMap();
+        HashMap<Integer, ArrayList<Integer>> edgeMap = hypergraph.getEdgeMap();
         HashMap<Integer, ArrayList<Integer>> nodeToEdgesMap = hypergraph.getNodeToEdgesMap();
 
         //temp data
@@ -44,20 +49,18 @@ public class Decremental {
         /*
          compute pre core and update graph
          1.update nodeList
-         2.update edgeList
-         3.update nodeToEdgesMap
+         2.update nodeToEdgesMap
          */
-        for (Integer v : e0) {
+        for (Integer v : edgeMap.get(e0Id)) {
             ArrayList<Integer> edgesContainV = nodeToEdgesMap.get(v);
 
             if (edgesContainV.size() == 1) { //isolated node
                 nodeList.remove(v); //1.update nodeList
             }
-            //3.update nodeToEdgesMap
-            edgesContainV.remove(e0);
+            //2.update nodeToEdgesMap
+            edgesContainV.remove(e0Id);
             nodeToEdgesMap.put(v, edgesContainV);
         }
-        edgeList.remove(e0);  //2.update edgeList
 
         /*
         traversal
@@ -69,14 +72,14 @@ public class Decremental {
         /*
         1.compute node support correlate with e_0
          */
-        int core_root = tempCoreEMap.get(e0);
+        int core_root = tempCoreEMap.get(e0Id);
         HashMap<Integer, Boolean> visitedNode = new HashMap<>();
         for (Integer v : nodeList) {
             visitedNode.put(v, false);
         }
 
         Stack<Integer> stack = new Stack<>();
-        for (Integer v : e0) {
+        for (Integer v : edgeMap.get(e0Id)) {
             if (tempCoreVMap.get(v) == core_root) {
                 stack.push(v);
                 visitedNode.put(v, true); //NEED!,the initialized value not only one
@@ -87,17 +90,17 @@ public class Decremental {
         while (!stack.isEmpty()) {
             Integer v = stack.pop();
 
-            for (ArrayList<Integer> e_contain_v : nodeToEdgesMap.get(v)) {
+            for (Integer eId : nodeToEdgesMap.get(v)) {
                 //compute support
-                int core_e_contain_v = tempCoreEMap.get(e_contain_v);
+                int core_e_contain_v = tempCoreEMap.get(eId);
                 if (core_e_contain_v >= core_root) {
                     int support = supportMap.get(v) == null ? 1 : (supportMap.get(v) + 1);
                     supportMap.put(v, support);
                 }
                 //travel
                 if (core_e_contain_v == core_root) {
-                    for (Integer u : e_contain_v) {
-                        if (!visitedNode.get(u) && tempCoreVMap.get(u) == core_root){
+                    for (Integer u : edgeMap.get(eId)) {
+                        if (!visitedNode.get(u) && tempCoreVMap.get(u) == core_root) {
                             stack.push(u);
                             visitedNode.put(u, true);
                         }
@@ -108,16 +111,20 @@ public class Decremental {
 
         /*
         2.shrink nodes cannot be k-core
+        TODO:change to decomposition-like, use a stack
          */
-
         ArrayList<Integer> reduceCoreNodes = new ArrayList<>();
-        supportMap = (HashMap<Integer, Integer>) ToolUtils.sortMapByValue(supportMap, 1); //sorted by value
-        for (Integer v : supportMap.keySet()) {
-            if (supportMap.get(v) < core_root) {
+        supportMap = (HashMap<Integer, Integer>) ToolUtils.sortMapByValue(supportMap, 1); //sorted by value ascending
+
+        for (Map.Entry<Integer,Integer> entry : supportMap.entrySet()) {
+            Integer v = entry.getKey();
+            Integer support_v = entry.getValue();
+
+            if (support_v < core_root) {
                 tempCoreVMap.put(v, core_root - 1);
                 reduceCoreNodes.add(v);
-                for (ArrayList<Integer> e_contain_v : nodeToEdgesMap.get(v)) {
-                    for (Integer u : e_contain_v) {
+                for (Integer e_contain_v : nodeToEdgesMap.get(v)) {
+                    for (Integer u : edgeMap.get(e_contain_v)) {
                         if (supportMap.containsKey(u) && !reduceCoreNodes.contains(u)) {
                             int support_u = supportMap.get(u) - 1;
                             supportMap.put(u, support_u);
@@ -130,20 +137,16 @@ public class Decremental {
         /*
         3.update core number of edges in k-core
          */
-        int countEdge=0;
+        int countDynamicEdge = 0;
         for (Integer v : reduceCoreNodes) {
-            for (ArrayList<Integer> e_contain_v : nodeToEdgesMap.get(v)) {
+            for (Integer e_contain_v : nodeToEdgesMap.get(v)) {
                 if (tempCoreEMap.get(e_contain_v) == core_root) { //only the core_root edges may be increase
-                    countEdge++;
-                    int core_min = Integer.MAX_VALUE;
-                    for (Integer u : e_contain_v) {
-                        core_min = Math.min(core_min, tempCoreVMap.get(u)); //update the core of edge
-                    }
-                    tempCoreEMap.put(e_contain_v, core_min);
+                    countDynamicEdge++;
+                    tempCoreEMap.put(e_contain_v, core_root - 1); //these edges contain node whose core decrease will decrease
                 }
             }
         }
-        tempCoreEMap.remove(e0);
+        tempCoreEMap.remove(e0Id);
 
         setCoreVMap(tempCoreVMap);
         setCoreEMap(tempCoreEMap);
@@ -151,10 +154,11 @@ public class Decremental {
         long endTime = System.nanoTime();
         double takenTime = (endTime - startTime) / 1.0E9D;
         LOGGER.error(takenTime);
-        System.out.println("countEdge:"+countEdge);
-        System.out.println("countNode:"+reduceCoreNodes.size());
+        System.out.println("countSearchNode:" + supportMap.size());
+        System.out.println("countDynamicNode:" + reduceCoreNodes.size());
+        System.out.println("countDynamicEdge:" + countDynamicEdge);
 
-        return new Result(coreVMap, takenTime, "Decremental", "rest");
+        return new Result(coreVMap, coreEMap, takenTime, "Decremental", "rest");
     }
 
     /**
@@ -168,11 +172,11 @@ public class Decremental {
         this.hypergraph = hypergraph;
     }
 
-    public HashMap<ArrayList<Integer>, Integer> getCoreEMap() {
+    public HashMap<Integer, Integer> getCoreEMap() {
         return coreEMap;
     }
 
-    public void setCoreEMap(HashMap<ArrayList<Integer>, Integer> coreEMap) {
+    public void setCoreEMap(HashMap<Integer, Integer> coreEMap) {
         this.coreEMap = coreEMap;
     }
 
