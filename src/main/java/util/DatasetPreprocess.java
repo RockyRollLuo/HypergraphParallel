@@ -288,75 +288,7 @@ public class DatasetPreprocess {
                 coreVMap.put(Integer.parseInt(tokens[0]), Integer.parseInt(tokens[1]));
             }
 
-            /**
-             * core V distribution
-             */
-            HashMap<Integer, Integer> coreNumDistribution = ToolUtils.getDegreeDistribution(coreVMap);
-            Integer curSum = 0;
-            HashMap<Integer, Double> percentageV = new HashMap<>();
-            Integer allSum = 0;
-            for (Integer key : coreNumDistribution.keySet()) {
-                allSum += coreNumDistribution.get(key);
-            }
-            for (Integer key : coreNumDistribution.keySet()) {
-                curSum += coreNumDistribution.get(key);
-                double precent = 1.0 * curSum / allSum;
-                percentageV.put(key, (new BigDecimal(precent * 100).setScale(3, RoundingMode.FLOOR)).doubleValue());
-            }
-            System.out.println("=vertex:");
-            System.out.println(percentageV.values().toString());
 
-//            ArrayList<Integer> values = new ArrayList<>(coreNumDistribution.values());
-//            ArrayList<Double> valuesPrecent = new ArrayList<>();
-//            int nodeListSize = coreVMap.size();
-//            for (int num : values) {
-//                double precent = num * 1.0 / nodeListSize;
-//                if (precent > 0.01) {
-//                    double precent2 = (new BigDecimal(precent * 100).setScale(3, RoundingMode.FLOOR)).doubleValue();
-//                    valuesPrecent.add(precent2);
-//                }
-//            }
-//            System.out.println(valuesPrecent.toString());
-
-
-            //read edgelist
-            String path_dataset = dataset + ".txt";
-            Hypergraph hypergraph = FileIOUtils.loadGraph(path_dataset, " ", false);
-            ArrayList<ArrayList<Integer>> edgeList = hypergraph.getEdgeList();
-
-            HashMap<Integer, Integer> coreENumsMap = new HashMap<>();
-            for (ArrayList<Integer> e : edgeList) {
-                int core_e = Integer.MAX_VALUE;
-                for (Integer v : e) {
-                    int core = 1;
-                    if (coreVMap.containsKey(v)) {
-                        core = coreVMap.get(v);
-                    }
-                    core_e = Math.min(core_e, core);
-                }
-
-                if (coreENumsMap.containsKey(core_e)) {
-                    int num = coreENumsMap.get(core_e);
-                    coreENumsMap.put(core_e, num + 1);
-                } else {
-                    coreENumsMap.put(core_e, 1);
-                }
-            }
-//            System.out.println(coreENumsMap.keySet().toString());
-
-            curSum = 0;
-            HashMap<Integer, Double> percentageE = new HashMap<>();
-            allSum = 0;
-            for (Integer key : coreENumsMap.keySet()) {
-                allSum += coreENumsMap.get(key);
-            }
-            for (Integer key : coreENumsMap.keySet()) {
-                curSum += coreENumsMap.get(key);
-                double precent = 1.0 * curSum / allSum;
-                percentageE.put(key, (new BigDecimal(precent * 100).setScale(3, RoundingMode.FLOOR)).doubleValue());
-            }
-            System.out.println("=Edge:");
-            System.out.println(percentageE.values().toString());
 
             long endTime1 = System.nanoTime();
             LOGGER.info("WRITE DONE!: " + (double) (endTime1 - startTime1) / 1.0E9D);

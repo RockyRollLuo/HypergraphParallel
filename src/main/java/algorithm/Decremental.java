@@ -3,7 +3,7 @@ package algorithm;
 import model.Hypergraph;
 import model.Result;
 import org.apache.log4j.Logger;
-import util.ToolUtils;
+import util.GetUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -112,7 +112,7 @@ public class Decremental {
         TODO:change to decomposition-like, use a stack
          */
         ArrayList<Integer> reduceCoreNodes = new ArrayList<>();
-        supportMap = (HashMap<Integer, Integer>) ToolUtils.sortMapByValue(supportMap, 1); //sorted by value ascending
+        supportMap = (HashMap<Integer, Integer>) GetUtils.getSortMapByValue(supportMap, 1); //sorted by value ascending
 
         for (Map.Entry<Integer,Integer> entry : supportMap.entrySet()) {
             Integer v = entry.getKey();

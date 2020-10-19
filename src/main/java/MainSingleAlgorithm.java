@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 import util.FileIOUtils;
 import util.SetOpt;
 import util.SetOpt.Option;
-import util.ToolUtils;
+import util.GetUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,14 +39,14 @@ public class MainSingleAlgorithm {
         MainSingleAlgorithm main = new MainSingleAlgorithm();
         args = SetOpt.setOpt(main, args);
         LOGGER.info("Run information:");
-        System.out.println("algorithm type:" + ToolUtils.getAlgorithmType(algorithmType));
-        System.out.println("choose node degree position :" + ToolUtils.getDegreePosition(degreePosition));
+        System.out.println("algorithm type:" + GetUtils.getAlgorithmType(algorithmType));
+        System.out.println("choose node degree position :" + GetUtils.getDegreePosition(degreePosition));
 
         /*
         graph information
          */
         String datasetName = args[0];
-        Hypergraph hypergraph = FileIOUtils.loadGraph(datasetName, ToolUtils.getDelim(delimType),constructStructure);
+        Hypergraph hypergraph = FileIOUtils.loadGraph(datasetName, GetUtils.getDelim(delimType),constructStructure);
         ArrayList<Integer> nodeList = hypergraph.getNodeList();
         HashMap<Integer,ArrayList<Integer>> edgeMap = hypergraph.getEdgeMap();
         HashMap<Integer, ArrayList<Integer>> nodeToEdgesMap = hypergraph.getNodeToEdgesMap();
@@ -72,10 +72,10 @@ public class MainSingleAlgorithm {
 
         }else if (algorithmType == 1 || algorithmType == 2) {
 
-            degreeMap = (HashMap<Integer, Integer>) ToolUtils.sortMapByValue(degreeMap, 0); //sorted nodes by degree descending
-            int index = ToolUtils.getNodeIndexRand(degreePosition,nodeList.size());
+            degreeMap = (HashMap<Integer, Integer>) GetUtils.getSortMapByValue(degreeMap, 0); //sorted nodes by degree descending
+            int index = GetUtils.getNodeIndexRand(degreePosition,nodeList.size());
             Integer node = (new ArrayList<Integer>(degreeMap.keySet())).get(index);
-            Integer e0Id = ToolUtils.getRandomElement(nodeToEdgesMap.get(node));
+            Integer e0Id = GetUtils.getRandomElement(nodeToEdgesMap.get(node));
             LOGGER.info("dynamic edge e0:"+edgeMap.get(e0Id).toString());
 
             /*

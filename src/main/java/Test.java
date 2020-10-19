@@ -1,4 +1,4 @@
-import util.ToolUtils;
+import util.GetUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,7 +52,7 @@ public class Test {
         System.out.println("===unsorted===");
         System.out.println(map.toString());
 
-        map = (HashMap<Integer, Integer>) ToolUtils.sortMapByValue(map, 1);
+        map = (HashMap<Integer, Integer>) GetUtils.getSortMapByValue(map, 1);
         System.out.println("===sorted===");
         System.out.println(map.toString());
     }

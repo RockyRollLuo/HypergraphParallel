@@ -3,7 +3,7 @@ package util;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class ToolUtils {
+public class GetUtils {
     private static ThreadLocalRandom getRandom() {
         return ThreadLocalRandom.current();
     }
@@ -69,7 +69,7 @@ public class ToolUtils {
      * @param flag
      * @return
      */
-    public static <K, V extends Comparable<? super V>> Map<K, V> sortMapByValue(Map<K, V> map, int flag) {
+    public static <K, V extends Comparable<? super V>> Map<K, V> getSortMapByValue(Map<K, V> map, int flag) {
         Map<K, V> sortMap = new LinkedHashMap<>();
         if (flag == 1) {
             map.entrySet().stream()
@@ -122,9 +122,9 @@ public class ToolUtils {
         return algorithm;
     }
 
-    public static String getDegreePosition(int degreePosition) {
-        String degreePos="high";
-        switch (degreePosition) {
+    public static String getCardiDistribution(int cardi) {
+        String degreePos="avg";
+        switch (cardi) {
             case 0:
                 degreePos="low";
                 break;
@@ -140,41 +140,14 @@ public class ToolUtils {
         return degreePos;
     }
 
-
-
-    public static HashMap<Integer, Integer> getDegreeDistribution(HashMap<Integer, Integer> degreeMap) {
-        HashMap<Integer, Integer> degreeNums = new HashMap<>();
-        for (int value : degreeMap.values()) {
-            int num=degreeNums.get(value)==null?1:degreeNums.get(value)+1;
-            degreeNums.put(value, num);
-        }
-        return degreeNums;
-    }
-
-    public static ArrayList<Integer> getCoreDistribution(HashMap<Integer, Integer> coreVMap) {
-        HashMap<Integer, Integer> coreNumMap = new HashMap<>();
-        for (int value : coreVMap.values()) {
-            int num=coreNumMap.get(value)==null?1:coreNumMap.get(value)+1;
-            coreNumMap.put(value, num);
-        }
-
-        ArrayList<Integer> coreNumList = new ArrayList<>();
-        int maxCore=Collections.max(coreNumMap.keySet());
-        for (int i = 1; i <= maxCore; i++) {
-            int num = coreNumMap.get(i) == null ? 0 : coreNumMap.get(i);
-            coreNumList.add(num);
-        }
-        return coreNumList;
-    }
-
     /**
      * get the node index randomly
      * @param degreePosition the node degree level
      * @return rand index
      */
     public static int getNodeIndexRand(int degreePosition,int length) {
-        int index1 = length * 2 / 10;
-        int index2 = length * 8 / 10;
+        int index1 = length * 3 / 10;
+        int index2 = length * 7 / 10;
 
         int randIndex = getRandomInt(index1, index2);
         if (degreePosition == 0) {//low
@@ -185,39 +158,5 @@ public class ToolUtils {
         return randIndex;
     }
 
-    public static HashMap<Integer,ArrayList<ArrayList<Integer>>> getCoreToEdgesMap(HashMap<ArrayList<Integer>, Integer> coreEMap) {
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> map = new HashMap<>();
-        for (ArrayList<Integer> e : coreEMap.keySet()) {
-            int core_e = coreEMap.get(e);
-            if (map.containsKey(core_e)) {
-                ArrayList<ArrayList<Integer>> edges = map.get(core_e);
-                edges.add(e);
-                map.put(core_e, edges);
-            } else {
-                ArrayList<ArrayList<Integer>> edges = new ArrayList<>();
-                edges.add(e);
-                map.put(core_e, edges);
-            }
-        }
-        return map;
-    }
-
-    public static HashMap<Integer,ArrayList<ArrayList<Integer>>> getCardiToEdgesMap(ArrayList<ArrayList<Integer>> edgeList) {
-        HashMap<Integer, ArrayList<ArrayList<Integer>>> map = new HashMap<>();
-        for (ArrayList<Integer> e : edgeList) {
-            int cardi = e.size();
-
-            if (map.containsKey(cardi)) {
-                ArrayList<ArrayList<Integer>> edges = map.get(cardi);
-                edges.add(e);
-                map.put(cardi, edges);
-            } else {
-                ArrayList<ArrayList<Integer>> edges = new ArrayList<>();
-                edges.add(e);
-                map.put(cardi, edges);
-            }
-        }
-        return map;
-    }
 }
 
