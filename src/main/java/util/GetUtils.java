@@ -60,29 +60,6 @@ public class GetUtils {
         return new ArrayList<Integer>(NList.subList(0, k));
     }
 
-    /**
-     * sorted key in map by value
-     * flag = 1 ascending order
-     * flag = 0 descending order
-     *
-     * @param map
-     * @param flag
-     * @return
-     */
-    public static <K, V extends Comparable<? super V>> Map<K, V> getSortMapByValue(Map<K, V> map, int flag) {
-        Map<K, V> sortMap = new LinkedHashMap<>();
-        if (flag == 1) {
-            map.entrySet().stream()
-                    .sorted((o1, o2) -> o1.getValue().compareTo(o2.getValue()))
-                    .forEach(entry -> sortMap.put(entry.getKey(), entry.getValue()));
-        } else {
-            map.entrySet().stream()
-                    .sorted((o1, o2) -> o2.getValue().compareTo(o1.getValue()))
-                    .forEach(entry -> sortMap.put(entry.getKey(), entry.getValue()));
-        }
-        return sortMap;
-    }
-
     public static String getDelim(int delimType) {
         String delim="\t";
         switch (delimType) {
@@ -141,22 +118,28 @@ public class GetUtils {
     }
 
     /**
-     * get the node index randomly
-     * @param degreePosition the node degree level
-     * @return rand index
+     * sorted key in map by value
+     * flag = 1 ascending order
+     * flag = 0 descending order
+     *
+     * @param map
+     * @param flag
+     * @return
      */
-    public static int getNodeIndexRand(int degreePosition,int length) {
-        int index1 = length * 3 / 10;
-        int index2 = length * 7 / 10;
-
-        int randIndex = getRandomInt(index1, index2);
-        if (degreePosition == 0) {//low
-            randIndex = getRandomInt(index2, length);
-        } else if (degreePosition == 2) {//high
-            randIndex = getRandomInt(0, index1);
+    public static <K, V extends Comparable<? super V>> Map<K, V> getSortMapByValue(Map<K, V> map, int flag) {
+        Map<K, V> sortMap = new LinkedHashMap<>();
+        if (flag == 1) {
+            map.entrySet().stream()
+                    .sorted((o1, o2) -> o1.getValue().compareTo(o2.getValue()))
+                    .forEach(entry -> sortMap.put(entry.getKey(), entry.getValue()));
+        } else {
+            map.entrySet().stream()
+                    .sorted((o1, o2) -> o2.getValue().compareTo(o1.getValue()))
+                    .forEach(entry -> sortMap.put(entry.getKey(), entry.getValue()));
         }
-        return randIndex;
+        return sortMap;
     }
+
 
 }
 

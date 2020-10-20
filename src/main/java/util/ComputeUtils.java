@@ -1,25 +1,55 @@
 package util;
 
-import com.sun.java.swing.plaf.windows.WindowsTextAreaUI;
 import model.Hypergraph;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import static util.GetUtils.getRandomInt;
+import java.util.*;
 
 public class ComputeUtils {
 
-    public static ArrayList<ArrayList<Integer>> constructMultiDeletionEdges(Hypergraph hypergraph, ArrayList<ArrayList<Integer>> deletedEdges) {
-        ArrayList<ArrayList<Integer>> multiEdge = new ArrayList<>();
+    /**
+     * construct a multi edges that can be delete in one iteration
+     * @param hypergraph graph
+     * @param coreEMap core of edge
+     * @param deltaEdges a batch of edges
+     * @return multi edges
+     */
+    public static ArrayList<Integer> constructMultiDeletionEdges(Hypergraph hypergraph, HashMap<Integer, Integer> coreEMap, ArrayList<Integer> deltaEdges) {
+        ArrayList<Integer> multiEdge = new ArrayList<>();
+        ArrayList<Integer> coreList = new ArrayList<>();
 
+        LinkedList<Integer> deltaEdgesList = new LinkedList<>(deltaEdges);
+        multiEdge.add(deltaEdgesList.poll());
+
+        HashMap<Integer, ArrayList<Integer>> edgeMap = hypergraph.getEdgeMap();
+
+
+        for (Integer e_delta : deltaEdgesList) {
+            int core_e_delta = coreEMap.get(e_delta);
+            ArrayList<Integer> nodes_e_delta = edgeMap.get(e_delta);
+
+            for (Integer e_multi : multiEdge) {
+                int core_e_multi = coreEMap.get(e_multi);
+                ArrayList<Integer> nodes_e_multi = edgeMap.get(e_multi);
+
+                if (Collections.disjoint(nodes_e_delta, nodes_e_multi)) {
+                    multiEdge.add(e_delta);
+                }else if (1) {//todo
+
+                } else if (core_e_delta != core_e_multi) {
+
+
+                }
+
+
+
+            }
+
+        }
 
         //update deletedEdges
-        deletedEdges.removeAll(multiEdge);
+        deltaEdges.removeAll(multiEdge);
         return multiEdge;
     }
 
@@ -123,17 +153,18 @@ public class ComputeUtils {
 
     /**
      * choose dynamic edges by cardinality distribution
-     * @param edgeMap edgeMap
-     * @param dynamicNums  the number of dynamic edges
-     * @param cardi cardinality distribution
+     *
+     * @param edgeMap     edgeMap
+     * @param dynamicNums the number of dynamic edges
+     * @param cardi       cardinality distribution
      * @return id list of dynamic edges
      */
-    public static ArrayList<Integer> computeDynamicEdges(HashMap<Integer, ArrayList<Integer>> edgeMap, int dynamicNums,int cardi) {
+    public static ArrayList<Integer> computeDynamicEdges(HashMap<Integer, ArrayList<Integer>> edgeMap, int dynamicNums, int cardi) {
         ArrayList<Integer> dynamicEdges = new ArrayList<>();
 
         HashMap<Integer, Integer> edgeCardiMap = new HashMap<>();
         for (Map.Entry<Integer, ArrayList<Integer>> entry : edgeMap.entrySet()) {
-            Integer eId=entry.getKey();
+            Integer eId = entry.getKey();
             ArrayList<Integer> edgeNodes = entry.getValue();
 
             edgeCardiMap.put(eId, edgeNodes.size());
@@ -149,7 +180,7 @@ public class ComputeUtils {
         ArrayList<Integer> choosenSubList = null;
 
         if (cardi == 0) {//low
-            choosenSubList=new ArrayList<>(sortedNodesList.subList(0, index1));
+            choosenSubList = new ArrayList<>(sortedNodesList.subList(0, index1));
         } else if (cardi == 2) {//high
             choosenSubList = new ArrayList<>(sortedNodesList.subList(index2, length));
         }
